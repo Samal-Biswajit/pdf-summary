@@ -17,7 +17,7 @@ const GenerateWeeklyStrategyInputSchema = z.object({
 export type GenerateWeeklyStrategyInput = z.infer<typeof GenerateWeeklyStrategyInputSchema>;
 
 const GenerateWeeklyStrategyOutputSchema = z.object({
-  weeklyStrategy: z.string().describe('A 7-day actionable strategy derived from the PDF content.'),
+  weeklyStrategy: z.string().describe('A 7-day actionable strategy derived from the PDF content, formatted as markdown.'),
 });
 export type GenerateWeeklyStrategyOutput = z.infer<typeof GenerateWeeklyStrategyOutputSchema>;
 
@@ -32,6 +32,8 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert in creating actionable weekly strategies based on document content.
 
   Analyze the following PDF content and generate a detailed 7-day strategy that the user can implement.
+
+  The output should be formatted in markdown, with a main heading for the strategy and subheadings for each day (e.g., '# Weekly Strategy', '## Day 1: ...'). Use lists to outline the actions for each day.
 
   PDF Content: {{{pdfText}}}
   `,

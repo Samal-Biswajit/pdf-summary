@@ -2,13 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileUp, Loader2, XCircle } from 'lucide-react';
+import { FileUp, Loader2, XCircle, FileCheck2 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from './ui/button';
 
-// Set up the PDF.js worker from a CDN to avoid build configuration issues.
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
 interface PdfUploaderProps {
@@ -22,6 +20,7 @@ export default function PdfUploader({
 }: PdfUploaderProps) {
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -33,6 +32,7 @@ export default function PdfUploader({
       setError(null);
       setIsExtracting(true);
       setIsLoading(true);
+      setFileName(file.name);
 
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -47,12 +47,13 @@ export default function PdfUploader({
           fullText += pageText + '\n';
         }
 
-        onTextExtracted(fullText);
+        onTextExtracted(fullText.trim());
       } catch (err) {
         console.error('Error extracting text:', err);
-        setError('Failed to process PDF. Please ensure it is a valid file.');
+        setError('Failed to process PDF. Please ensure it is a valid file and not corrupted.');
         setIsExtracting(false);
         setIsLoading(false);
+        setFileName(null);
       }
     },
     [onTextExtracted, setIsLoading]
@@ -62,35 +63,45 @@ export default function PdfUploader({
     onDrop,
     accept: { 'application/pdf': ['.pdf'] },
     multiple: false,
+    disabled: isExtracting,
   });
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        {isExtracting ? (
-          <div className="flex flex-col items-center justify-center space-y-4 text-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="font-semibold">Extracting text from PDF...</p>
-            <p className="text-sm text-muted-foreground">Please wait a moment.</p>
-          </div>
-        ) : (
-          <div
-            {...getRootProps()}
-            className={`flex flex-col items-center justify-center h-48 rounded-lg border-2 border-dashed
-            cursor-pointer transition-colors
-            ${isDragActive ? 'border-primary bg-accent/50' : 'border-border hover:border-primary/50'}`}
-          >
-            <input {...getInputProps()} />
-            <div className="text-center">
-              <FileUp className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-2 font-semibold">
-                {isDragActive
-                  ? 'Drop the PDF here...'
-                  : 'Drag & drop a PDF here, or click to select'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Max file size 20MB
-              </p>
+    <Card className="w-full max-w-lg mx-auto border-dashed border-2 hover:border-primary transition-colors duration-300">
+      <CardContent className="p-0">
+        <div
+          {...getRootProps()}
+          className={`flex flex-col items-center justify-center h-64 rounded-lg cursor-pointer
+          ${isDragActive ? 'bg-accent' : 'bg-transparent'}`}
+        >
+          <input {...getInputProps()} />
+          {isExtracting ? (
+             <div className="flex flex-col items-center justify-center space-y-3 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="font-semibold text-foreground">Extracting text...</p>
+              <p className="text-sm text-muted-foreground">{fileName}</p>
+            </div>
+          ) : (
+            <div className="text-center p-8">
+              {fileName ? (
+                <>
+                  <FileCheck2 className="mx-auto h-12 w-12 text-green-500" />
+                  <p className="mt-2 font-semibold text-foreground">{fileName}</p>
+                  <p className="text-sm text-muted-foreground">Ready to be analyzed.</p>
+                </>
+              ) : (
+                <>
+                  <FileUp className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <p className="mt-4 font-semibold text-foreground">
+                    {isDragActive
+                      ? 'Drop the PDF here...'
+                      : 'Drag & drop a PDF file, or click to select'}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Max file size 20MB
+                  </p>
+                </>
+              )}
               {error && (
                 <div className="mt-4 flex items-center justify-center gap-2 text-destructive">
                   <XCircle className="h-4 w-4" />
@@ -98,8 +109,8 @@ export default function PdfUploader({
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );

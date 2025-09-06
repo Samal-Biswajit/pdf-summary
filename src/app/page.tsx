@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Loader2, Sparkles } from 'lucide-react';
+import { BookOpen, Loader2 } from 'lucide-react';
 
 import { generatePdfSummary } from '@/ai/flows/generate-pdf-summary';
 import { generateWeeklyStrategy } from '@/ai/flows/generate-weekly-strategy';
-import { generateQuizQuestions } from '@/ai/flows/generate-quiz-questions';
+import { generateQuizQuestions, type GenerateQuizQuestionsOutput } from '@/ai/flows/generate-quiz-questions';
 
 import PdfUploader from '@/components/pdf-uploader';
 import OutputDisplay from '@/components/output-display';
@@ -14,11 +14,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type AppState = 'initial' | 'loading' | 'results' | 'error';
+type QuizData = GenerateQuizQuestionsOutput['quiz'];
+
 
 export default function Home() {
   const [summary, setSummary] = useState('');
   const [strategy, setStrategy] = useState('');
-  const [quiz, setQuiz] = useState('');
+  const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [appState, setAppState] = useState<AppState>('initial');
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
@@ -40,13 +42,13 @@ export default function Home() {
         generateQuizQuestions({ pdfText: text }),
       ]);
 
-      if (summaryRes.summary && strategyRes.weeklyStrategy && quizRes.quizQuestions) {
+      if (summaryRes.summary && strategyRes.weeklyStrategy && quizRes.quiz) {
         setSummary(summaryRes.summary);
         setStrategy(strategyRes.weeklyStrategy);
-        setQuiz(quizRes.quizQuestions);
+        setQuiz(quizRes.quiz);
         setAppState('results');
       } else {
-        throw new Error('One or more AI generation steps failed.');
+        throw new Error('One or more AI generation steps failed to return content.');
       }
     } catch (e) {
       console.error(e);
@@ -66,7 +68,7 @@ export default function Home() {
   const handleReset = () => {
     setSummary('');
     setStrategy('');
-    setQuiz('');
+    setQuiz(null);
     setErrorMessage('');
     setAppState('initial');
   };
@@ -77,7 +79,7 @@ export default function Home() {
         return <LoadingState />;
       case 'results':
         return (
-          <OutputDisplay
+          quiz && <OutputDisplay
             summary={summary}
             strategy={strategy}
             quiz={quiz}
@@ -100,14 +102,14 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 md:p-8">
-      <div className="w-full max-w-4xl space-y-8">
-        <header className="flex flex-col items-center text-center">
+    <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-8">
+      <div className="w-full max-w-4xl mx-auto">
+        <header className="flex flex-col items-center text-center mb-10">
           <div className="mb-4 flex items-center gap-3">
-            <div className="p-3 bg-primary rounded-xl shadow-md">
-              <FileText size={28} className="text-primary-foreground" />
+            <div className="p-2 bg-secondary rounded-lg">
+              <BookOpen size={24} className="text-foreground" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-headline font-bold text-slate-800 dark:text-slate-100">
+            <h1 className="text-3xl md:text-4xl font-headline font-bold text-foreground">
               PDF Insights
             </h1>
           </div>
@@ -117,9 +119,9 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="w-full">{renderContent()}</div>
+        <div className="w-full min-h-[500px] flex items-center justify-center">{renderContent()}</div>
 
-        <footer className="text-center text-sm text-muted-foreground">
+        <footer className="text-center text-sm text-muted-foreground mt-10">
           <p>&copy; {new Date().getFullYear()} PDF Insights. Powered by Gemini.</p>
         </footer>
       </div>
@@ -128,30 +130,29 @@ export default function Home() {
 }
 
 const LoadingState = () => (
-  <Card>
+  <Card className="w-full border-none shadow-none">
     <CardContent className="p-6">
       <div className="flex flex-col items-center justify-center space-y-4 text-center">
-        <div className="flex items-center space-x-2 text-primary">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-xl font-semibold font-headline">
+        <div className="flex items-center space-x-3 text-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-lg font-semibold font-headline">
             Analyzing your document...
           </p>
         </div>
-        <p className="text-muted-foreground">
-          This may take a moment. We're generating your summary, strategy, and
-          quiz.
+        <p className="text-muted-foreground max-w-md">
+          This may take a moment. We're reading your document and generating a summary, a weekly strategy, and a custom quiz just for you.
         </p>
       </div>
-      <div className="space-y-6 mt-8">
-        <div className="flex space-x-2">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-24" />
-        </div>
-        <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
+      <div className="space-y-6 mt-10">
+        <div className="space-y-3">
+            <Skeleton className="h-5 w-1/4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
+        </div>
+         <div className="space-y-3">
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
         </div>
       </div>
     </CardContent>
@@ -159,13 +160,13 @@ const LoadingState = () => (
 );
 
 const ErrorState = ({ message, onReset }: { message: string, onReset: () => void }) => (
-    <Card className="border-destructive">
-        <CardContent className="p-6 text-center">
+    <Card className="border-destructive/50 bg-destructive/5 w-full">
+        <CardContent className="p-8 text-center">
             <h3 className="text-xl font-headline font-semibold text-destructive mb-2">Analysis Failed</h3>
-            <p className="text-muted-foreground mb-4">{message}</p>
-            <button onClick={onReset} className="text-sm font-semibold text-primary hover:underline">
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">{message}</p>
+            <Button onClick={onReset} variant="destructive" className="bg-destructive/90">
                 Upload another file
-            </button>
+            </Button>
         </CardContent>
     </Card>
 );

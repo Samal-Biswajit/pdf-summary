@@ -16,11 +16,20 @@ const GenerateQuizQuestionsInputSchema = z.object({
 });
 export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
 
-const GenerateQuizQuestionsOutputSchema = z.object({
-  quizQuestions: z
-    .string()
-    .describe('The generated quiz questions in a readable format.'),
+const QuizQuestionSchema = z.object({
+  question: z.string().describe('The quiz question.'),
+  options: z.array(z.string()).describe('An array of 4 multiple-choice options.'),
+  answerIndex: z.number().describe('The 0-based index of the correct answer in the options array.'),
+  explanation: z.string().describe('A brief explanation for the correct answer.'),
 });
+
+const GenerateQuizQuestionsOutputSchema = z.object({
+  quiz: z.object({
+    title: z.string().describe('A title for the quiz.'),
+    questions: z.array(QuizQuestionSchema).describe('An array of 10 quiz questions.'),
+  }),
+});
+
 export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
 
 export async function generateQuizQuestions(
@@ -33,9 +42,9 @@ const prompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
-  prompt: `You are an expert educator specializing in generating quiz questions from documents.
+  prompt: `You are an expert educator specializing in generating engaging and challenging quiz questions from documents.
 
-You will use the content of the document provided to generate a set of quiz questions (multiple choice and short answer) that assess the user's understanding of the material.
+You will use the content of the document provided to generate a quiz with a title and a set of 10 multiple-choice questions that assess the user's understanding of the material. Each question must have exactly 4 options.
 
 Document Content: {{{pdfText}}}`,
 });

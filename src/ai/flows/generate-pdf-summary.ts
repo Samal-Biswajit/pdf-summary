@@ -17,7 +17,7 @@ const GeneratePdfSummaryInputSchema = z.object({
 export type GeneratePdfSummaryInput = z.infer<typeof GeneratePdfSummaryInputSchema>;
 
 const GeneratePdfSummaryOutputSchema = z.object({
-  summary: z.string().describe('A concise summary of the PDF document.'),
+  summary: z.string().describe('A concise summary of the PDF document, formatted in markdown.'),
 });
 export type GeneratePdfSummaryOutput = z.infer<typeof GeneratePdfSummaryOutputSchema>;
 
@@ -29,7 +29,10 @@ const pdfSummaryPrompt = ai.definePrompt({
   name: 'pdfSummaryPrompt',
   input: {schema: GeneratePdfSummaryInputSchema},
   output: {schema: GeneratePdfSummaryOutputSchema},
-  prompt: `Summarize the following PDF content in a concise manner:\n\n{{{pdfText}}}`, 
+  prompt: `Summarize the following PDF content in a concise manner. The output should be formatted in markdown, with a main heading for the summary and subheadings for key sections. Use paragraphs and lists to structure the content for readability.
+
+PDF Content:
+{{{pdfText}}}`, 
 });
 
 const generatePdfSummaryFlow = ai.defineFlow(
