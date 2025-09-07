@@ -12,6 +12,8 @@ import OutputDisplay from '@/components/output-display';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
 
 type AppState = 'initial' | 'loading' | 'results' | 'error';
 type QuizData = GenerateQuizQuestionsOutput['quiz'];
@@ -104,19 +106,22 @@ export default function Home() {
   return (
     <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-8">
       <div className="w-full max-w-4xl mx-auto">
-        <header className="flex flex-col items-center text-center mb-10">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="p-2 bg-secondary rounded-lg">
-              <BookOpen size={24} className="text-foreground" />
+        <header className="flex justify-between items-start mb-10">
+          <div className="flex flex-col items-start text-left">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="p-2 bg-secondary rounded-lg">
+                <BookOpen size={24} className="text-foreground" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-headline font-bold text-foreground">
+                PDF Insights
+              </h1>
             </div>
-            <h1 className="text-3xl md:text-4xl font-headline font-bold text-foreground">
-              PDF Insights
-            </h1>
+            <p className="max-w-2xl text-muted-foreground md:text-lg">
+              Upload a PDF to instantly generate a concise summary, an actionable
+              weekly plan, and a helpful quiz.
+            </p>
           </div>
-          <p className="max-w-2xl text-muted-foreground md:text-lg">
-            Upload a PDF to instantly generate a concise summary, an actionable
-            weekly plan, and a helpful quiz.
-          </p>
+          <ThemeToggle />
         </header>
 
         <div className="w-full min-h-[500px] flex items-center justify-center">{renderContent()}</div>
